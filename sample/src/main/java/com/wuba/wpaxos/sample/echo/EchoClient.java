@@ -17,6 +17,7 @@ package com.wuba.wpaxos.sample.echo;
 
 import com.wuba.wpaxos.comm.NodeInfo;
 import com.wuba.wpaxos.sample.util.NodeUtil;
+
 import org.apache.logging.log4j.core.config.ConfigurationSource;
 import org.apache.logging.log4j.core.config.Configurator;
 
@@ -35,7 +36,7 @@ public class EchoClient {
 		}
 		
 		String rootPath = args[0];
-		String log4jConfig = rootPath + File.separator + "conf" + File.separator + "log4j.properties";
+		String log4jConfig = rootPath + File.separator + "conf" + File.separator + "log4j.xml";
 		ConfigurationSource src = new ConfigurationSource(new FileInputStream(log4jConfig));
 		Configurator.initialize(EchoClient.class.getClassLoader(), src);
 		NodeInfo myNode = NodeUtil.parseIpPort(args[1]);

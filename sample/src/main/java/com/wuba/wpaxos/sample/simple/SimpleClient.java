@@ -41,7 +41,7 @@ public class SimpleClient {
 			System.exit(1);
 		}
 		String rootPath = args[0];
-		String log4jConfig = rootPath + File.separator + "conf" + File.separator + "log4j.properties";
+		String log4jConfig = rootPath + File.separator + "conf" + File.separator + "log4j.xml";
 		ConfigurationSource src = new ConfigurationSource(new FileInputStream(log4jConfig));
 		Configurator.initialize(SimpleClient.class.getClassLoader(), src);
 		logger = LogManager.getLogger(SimpleClient.class);
