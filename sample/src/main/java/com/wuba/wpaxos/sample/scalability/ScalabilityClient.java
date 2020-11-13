@@ -6,6 +6,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
@@ -21,18 +23,33 @@ import com.wuba.wpaxos.sample.util.NodeUtil;
 public class ScalabilityClient implements Runnable {
 
 	private static Logger logger;
-	private static final int LogPeriod = 10000;
-	private static final int LifeTime = 300000;
+	public static final long LogPeriod = 10000;
+	public static final long LifeTime = 50000;
 
-	private static final int[] counter = { 0 };
+	private final int[] counter = { 0 };
 	private int runningCycle;
+	private int myPort;
+	private ScalabilityServer svr;
+	private List<Long> times ;
 
-	public static void main(String[] args) throws Exception {
+	private static final int nodeForAppend = 40000;
+
+	public static void main(String[] args) {
 		if (args.length != 4) {
+			System.out.println("not enough param");
 			System.exit(1);
 			// self address, address list, current Running Cycle(start with 0), boolean can this node propose
 		}
-		createLogger();
+
+		try {
+			createLogger();
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
 		// IP:port
 		final NodeInfo myNode = NodeUtil.parseIpPort(args[0]);
@@ -43,9 +60,16 @@ public class ScalabilityClient implements Runnable {
 		int currentCycle = Integer.parseInt(args[2]);
 		// 50 byte
 		final int sendSize = 50;
-
+		final ScalabilityClient self = new ScalabilityClient(currentCycle, Integer.parseInt(args[0].split(":")[1]));
 		final ScalabilityServer pxs = new ScalabilityServer(myNode, nodeInfoList);
-		pxs.runPaxos(false);
+		self.svr = pxs;
+
+		try {
+			pxs.runPaxos();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
 		// if able to propose
 		if (Boolean.parseBoolean(args[3])) {
@@ -53,8 +77,16 @@ public class ScalabilityClient implements Runnable {
 			Thread th = new Thread(() -> {
 				while (true) {
 //				CountDownLatch countDownLatch = new CountDownLatch(1);
+					self.times.add(System.currentTimeMillis());
 					if (pxs.propose(generateData(sendSize)).getResult() == 0) {
-						increaseCounter();
+						self.increaseCounter();
+					}
+					self.times.add(System.currentTimeMillis());
+					// slight delay
+					try {
+						Thread.sleep(10);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
 					}
 				}
 //			br.close();
@@ -64,16 +96,16 @@ public class ScalabilityClient implements Runnable {
 			th.start();
 		}
 
-		new ScalabilityClient(currentCycle).run();
+		self.run();
 
 	}
 
 	// increment
-	public synchronized static void increaseCounter() {
-		counter[0] += 1;
+	public synchronized void increaseCounter() {
+		this.counter[0] += 1;
 	}
 
-	// generate given byte size of data 
+	// generate given byte size of data
 	private synchronized static byte[] generateData(int size) {
 		byte[] b = new byte[size];
 		new Random().nextBytes(b);
@@ -83,28 +115,36 @@ public class ScalabilityClient implements Runnable {
 	private synchronized static void createLogger() throws FileNotFoundException, IOException {
 		if (logger == null) {
 			String log4jConfig = "." + File.separator + "conf" + File.separator + "log4j.xml";
+			System.out.print(log4jConfig);
 			ConfigurationSource src = new ConfigurationSource(new FileInputStream(log4jConfig));
 			Configurator.initialize(ScalabilityClient.class.getClassLoader(), src);
 			logger = LogManager.getLogger(ScalabilityClient.class);
 		}
-		logger.info("logger init");
 	}
 
-	public ScalabilityClient(int current) {
+	public ScalabilityClient(int current, int port) {
 		this.runningCycle = current;
+		this.myPort = port;
+		this.times = Collections.synchronizedList(new ArrayList<Long>());
 	}
 
 	// do the logging here
 	@Override
 	public synchronized void run() {
-		int cycle = LifeTime / LogPeriod;
-		for (int current = this.runningCycle; current < cycle; current += 1) {
+		long cycle = LifeTime / LogPeriod;
+		for (long current = this.runningCycle; current < cycle; current += 1) {
+
 			try {
 				this.wait(LogPeriod);
 			} catch (InterruptedException e) {
 			}
-			logger.info(current + "," + counter[0]);
-
+			logger.info(this.myPort + ":" + current + "," + counter[0]);
 		}
+		logger.info(this.myPort + ":" + this.times);
+		try {
+			this.wait(5000);
+		} catch (InterruptedException e) {
+		}
+
 	}
 }

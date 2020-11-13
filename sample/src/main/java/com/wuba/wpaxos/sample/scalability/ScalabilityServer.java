@@ -1,6 +1,7 @@
 package com.wuba.wpaxos.sample.scalability;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 import com.wuba.wpaxos.ProposeResult;
@@ -15,6 +16,7 @@ import com.wuba.wpaxos.storemachine.SMCtx;
 
 public class ScalabilityServer {
 
+	public static int gCount = 1;
 	private NodeInfo myNode;
 	private List<NodeInfo> nodeList;
 	private Node paxosNode;
@@ -31,8 +33,7 @@ public class ScalabilityServer {
 	// tracker use to add and kill process with added node
 	// different group will not communication with each other according to the
 	// documentation
-	public void runPaxos(boolean isTracker) throws Exception {
-		int gCount = 1;
+	public void runPaxos() throws Exception {
 		Options options = new Options();
 		String logStoragePath = this.makeLogStoragePath();
 		options.setGroupCount(gCount);
@@ -80,4 +81,11 @@ public class ScalabilityServer {
 		file.mkdirs();
 		return logStoragePath;
 	}
+
+	public List<NodeInfo> getAllMembers() {
+		List<NodeInfo> nodeInfoList = new ArrayList<NodeInfo>();
+		this.paxosNode.showMembership(0, nodeInfoList);
+		return nodeInfoList;
+	}
 }
+	
