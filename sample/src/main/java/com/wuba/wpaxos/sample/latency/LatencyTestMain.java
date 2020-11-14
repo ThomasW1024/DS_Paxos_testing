@@ -24,6 +24,13 @@ public class LatencyTestMain implements Runnable {
 
 	private static final Map<Integer, Process> processes = new HashMap<>();
 
+	/**
+	 * 
+	 * @param args[0] Integer number of node in paxos
+	 * @param args[1] Float percentage of node will send proposal 
+	 * @param args[2] Long time that the paxos will run before force terminate
+	 * @param args[3] Boolean will the nodes drop itself (default 30% change to drop itself, lifetime = rand(5000, 15000)
+	 */
 	public static void main(String[] args) {
 		deleteDbFiles(new File("./LatencyDb"));
 		moveDbFile(new File("./logs"));

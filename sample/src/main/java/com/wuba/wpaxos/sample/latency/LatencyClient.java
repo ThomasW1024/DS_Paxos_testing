@@ -41,6 +41,13 @@ public class LatencyClient implements Runnable {
 
 	private boolean droppable = false;
 
+	/**
+	 * 
+	 * @param args[0] String address of node
+	 * @param args[1] String list of address
+	 * @param args[2] Boolean can this node send proposal
+	 * @param args[3] Boolean will this node drop itself after timeout
+	 */
 	public static void main(String[] args) throws Exception {
 		if (args.length != 4) {
 			System.out.println(
