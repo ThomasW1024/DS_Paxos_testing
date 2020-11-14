@@ -16,10 +16,30 @@
       <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
     </Console>
   </Appenders>
+  
+   <Appenders>
+    <File name="MyFile2" fileName="logs/appLatency.log">
+      <PatternLayout>
+        <Pattern>%d %p %c{1.} [%t] %m%n</Pattern>
+      </PatternLayout>
+    </File>
+    <Async name="Async">
+      <AppenderRef ref="MyFile2"/>
+    </Async>
+    <Console name="Console" target="SYSTEM_OUT">
+      <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
+    </Console>
+    <Console name="Error_pipe" target="SYSTEM_ERR">
+      <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
+    </Console>
+  </Appenders>
 
   <Loggers>
     <Logger name="com.wuba.wpaxos.sample.scalability.ScalabilityClient" level="trace">
       <AppenderRef ref="MyFile"/>
+    </Logger>
+    <Logger name="com.wuba.wpaxos.sample.latency.LatencyClient" level="trace">
+      <AppenderRef ref="MyFile2"/>
     </Logger>
     <Root level="error">
       <AppenderRef ref="Error_pipe"/>
