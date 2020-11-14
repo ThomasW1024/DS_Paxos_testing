@@ -27,7 +27,6 @@ public class LatencyTestMain implements Runnable {
 	public static void main(String[] args) {
 		deleteDbFiles(new File("./LatencyDb"));
 		moveDbFile(new File("./logs"));
-	
 		if (args.length != 4) {
 			System.out.println(
 					"wrong usage: [int-number of node] [float - around Persentage of Proposing Node] [long-runtime] [boolean-dropable]");
@@ -95,6 +94,7 @@ public class LatencyTestMain implements Runnable {
 	}
 
 	public synchronized static void cleanUp() {
+		System.out.println("cleaning up");
 		for (Entry<Integer, Process> set : processes.entrySet()) {
 			if (set.getValue() != null) {
 				set.getValue().destroyForcibly();
@@ -114,18 +114,19 @@ public class LatencyTestMain implements Runnable {
 		}
 	}
 
-	private static void deleteDbFiles(File folder) {
+	private synchronized static void deleteDbFiles(File folder) {
 		if (folder != null) {
 			File[] files = folder.listFiles();
 			if (files != null) {
 				for (File f : files) {
+					deleteDbFiles(f);
 					f.delete();
 				}
 			}
 		}
 	}
 
-	private static void moveDbFile(File folder) {
+	private synchronized static void moveDbFile(File folder) {
 		String logAddr = folder + "/appLatency.log";
 		if (folder != null) {
 			try {

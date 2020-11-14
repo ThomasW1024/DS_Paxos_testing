@@ -84,8 +84,11 @@ public class LatencyClient implements Runnable {
 					try {
 						String latencyRespValue = latencyServer.propose(addr + ":" + (idx++), 0);
 						long endStamp = System.currentTimeMillis();
-
-						logger.info((endStamp - startStamp.get()));
+						if(latencyRespValue != null) {
+							logger.info((endStamp - startStamp.get()));
+						} else {
+							logger.info((startStamp.get() - endStamp));
+						}
 						startStamp.set(endStamp);
 						Thread.sleep(random.nextInt(5) * 100);
 					} catch (Exception e) {
