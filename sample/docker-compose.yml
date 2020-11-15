@@ -1,0 +1,48 @@
+version: "3.8"
+services:
+  paxos_client_1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: paxos_client
+    networks:
+      paxos_group_1:
+        ipv4_address: 172.18.18.2
+    expose:
+      - "30000"
+    entrypoint: java -cp /echo_client.jar com.wuba.wpaxos.sample.echo.EchoClient . 172.18.18.2:30000 172.18.18.2:30000,172.18.18.3:30000,172.18.18.4:30000 1 0
+
+  paxos_client_2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: paxos_client
+    networks:
+      paxos_group_1:
+        ipv4_address: 172.18.18.3
+    expose:
+      - "30000"
+    entrypoint: java -cp /echo_client.jar com.wuba.wpaxos.sample.echo.EchoClient . 172.18.18.3:30000 172.18.18.2:30000,172.18.18.3:30000,172.18.18.4:30000 1 0
+
+  paxos_client_3:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: paxos_client
+    networks:
+      paxos_group_1:
+        ipv4_address: 172.18.18.4
+    expose:
+      - "30000"
+    entrypoint: java -cp /echo_client.jar com.wuba.wpaxos.sample.echo.EchoClient . 172.18.18.4:30000 172.18.18.2:30000,172.18.18.3:30000,172.18.18.4:30000 1 0
+
+networks:
+  paxos_group_1:
+    driver: bridge
+    driver_opts:
+      com.docker.network.enable_ipv6: "false"
+    ipam:
+      driver: default
+      config:
+      - subnet: 172.18.18.0/24
+        gateway: 172.18.18.1

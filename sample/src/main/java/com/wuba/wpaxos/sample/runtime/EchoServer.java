@@ -13,7 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.wuba.wpaxos.sample.latency;
+package com.wuba.wpaxos.sample.runtime;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.wuba.wpaxos.ProposeResult;
 import com.wuba.wpaxos.comm.GroupSMInfo;
@@ -24,23 +28,16 @@ import com.wuba.wpaxos.config.PaxosTryCommitRet;
 import com.wuba.wpaxos.node.Node;
 import com.wuba.wpaxos.store.config.StoreConfig;
 import com.wuba.wpaxos.storemachine.SMCtx;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-
-public class LatencyServer {
-	private static final Logger logger = LogManager.getLogger(LatencyServer.class);
+public class EchoServer {
 	private NodeInfo myNode;
-	private List<NodeInfo> nodeList;
-	private String rootPath;
-	private Node paxosNode;
-	private IndexType indexType;
-	private int groupCount;
+    private List<NodeInfo> nodeList;
+    private String rootPath;
+    private Node paxosNode;
+    private IndexType indexType;
+    private int groupCount;
 
-	public LatencyServer(NodeInfo myNode, List<NodeInfo> nodeList, int groupCount, String rootPath, int indexType) {
+	public EchoServer(NodeInfo myNode, List<NodeInfo> nodeList, int groupCount, String rootPath, int indexType) {
 		this.myNode = myNode;
 		this.nodeList = nodeList;
 		this.paxosNode = null;
@@ -52,7 +49,7 @@ public class LatencyServer {
 			this.indexType = IndexType.PHYSIC_FILE;
 		}
 	}
-
+	
 	public void runPaxos() throws Exception {
 		Options options = new Options();
 		String logStoragePath = this.makeLogStoragePath(this.rootPath);
@@ -64,63 +61,59 @@ public class LatencyServer {
 		options.setUseBatchPropose(false);
 		options.setIndexType(indexType);
 		options.setStoreConfig(new StoreConfig(rootPath, null));
-
-		for (int gid = 0; gid < groupCount; gid++) {
+		
+		for(int gid = 0; gid < groupCount; gid++) {
 			GroupSMInfo smInfo = new GroupSMInfo();
 			smInfo.setUseMaster(true);
 			smInfo.setGroupIdx(gid);
-			smInfo.getSmList().add(new LatencySM(gid));
+			smInfo.getSmList().add(new EchoSM(gid));
 			options.getGroupSMInfoList().add(smInfo);
 		}
-
+		
 		this.paxosNode = Node.runNode(options);
 	}
-
+	
 	public void addMember(NodeInfo node) throws Exception {
 		this.paxosNode.addMember(0, node);
 	}
-
+	
 	public void deleteMember(NodeInfo node) throws Exception {
 		this.paxosNode.removeMember(0, node);
 	}
-
+	
 	public List<NodeInfo> getAllMembers() {
 		List<NodeInfo> nodeInfoList = new ArrayList<NodeInfo>();
 		this.paxosNode.showMembership(0, nodeInfoList);
 		return nodeInfoList;
 	}
 
-	public String propose(String latencyReqValue, int groupIdx) throws Exception {
+	public String echo(String echoReqValue, int groupIdx) throws Exception {
 		SMCtx ctx = new SMCtx();
-		LatencySMCtx latencySMctx = new LatencySMCtx();
-		ctx.setSmId(LatencySM.SMID);
-		ctx.setpCtx(latencySMctx);
+		EchoSMCtx echoSMctx = new EchoSMCtx();
+		ctx.setSmId(EchoSM.SMID);
+		ctx.setpCtx(echoSMctx);
 
 		this.paxosNode.setTimeoutMs(3000);
 		ProposeResult proposeResult = null;
-		proposeResult = this.paxosNode.propose(groupIdx, latencyReqValue.getBytes(), ctx);
+		proposeResult = this.paxosNode.propose(groupIdx, echoReqValue.getBytes(), ctx);
 
-		if (PaxosTryCommitRet.PaxosTryCommitRet_OK.getRet() == proposeResult.getResult()
-				&& latencySMctx.getLatencyRespValue() != null) {
-			String response = new String(latencySMctx.getLatencyRespValue());
-			logger.info(response);
-			return response;
+		if (PaxosTryCommitRet.PaxosTryCommitRet_OK.getRet() == proposeResult.getResult() && echoSMctx.getEchoRespValue() != null) {
+			return new String(echoSMctx.getEchoRespValue());
 		}
-
+		
 		return null;
 	}
 
 	public String makeLogStoragePath(String rootPath) {
 		if (rootPath == null) {
-			rootPath = System.getProperty("user.dir");
+			rootPath = System.getProperty("user.dir"); 
 		}
-		String logStoragePath = rootPath + File.separator + "LatencyDb" + File.separator + myNode.getNodeID()
-				+ File.separator + "db";
+		String logStoragePath = rootPath + File.separator + myNode.getNodeID() + File.separator + "db";
 		File file = new File(logStoragePath);
 		file.mkdirs();
 		return logStoragePath;
 	}
-
+	
 	public NodeInfo getMyNode() {
 		return myNode;
 	}

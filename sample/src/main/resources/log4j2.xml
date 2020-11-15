@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="warn">
+	<Properties>
+		<Property name="basePath">logs</Property>
+	</Properties>
+
+	<!--Define Custom Logging Message-->
+	<CustomLevels>
+		<CustomLevel name="RESULT" intLevel="99" />
+	</CustomLevels>
+
+	<Appenders>
+<!--		<RollingFile name="fileLogger" fileName="${basePath}/${sys:myLogFilename}/app.log" filePattern="${basePath}/${sys:myLogFilename}/app.%d{yyyy-MM-dd}.log">-->
+<!--			<PatternLayout>-->
+<!--				<pattern>[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} | %logger{36} -| [%t] - %msg%n</pattern>-->
+<!--			</PatternLayout>-->
+<!--			<Policies>-->
+<!--				<OnStartupTriggeringPolicy />-->
+<!--				<SizeBasedTriggeringPolicy size="20 MB" />-->
+<!--				<TimeBasedTriggeringPolicy />-->
+<!--			</Policies>-->
+<!--			<DefaultRolloverStrategy max="5" />-->
+<!--		</RollingFile>-->
+
+		<Console name="console" target="SYSTEM_OUT">
+			<PatternLayout pattern="[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} | %logger{36} -| [%t] - %msg%n" />
+		</Console>
+
+		<File name="MyLogFile" filename="${basePath}/${sys:myLogFilename}" append="false">
+			<PatternLayout pattern="[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %logger{36} -| %msg%n"/>
+		</File>
+
+		<File name="MyMeasurementFile" filename="${basePath}/${sys:myMeasurementLog}" append="false">
+			<PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS},%msg%n"/>
+		</File>
+
+		<File name="TotalMeasurementResultFile" filename="${basePath}/${sys:totalMeasurementLog}" append="true">
+			<PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS},%msg%n"/>
+		</File>
+
+	</Appenders>
+	<Loggers>
+		<Logger name="com.wuba.wpaxos.sample.runtime" level="debug" additivity="true">
+<!--			<appender-ref ref="fileLogger" level="debug" />-->
+			<appender-ref ref="MyLogFile" level="trace" />
+		</Logger>
+		<Logger name="com.wuba.wpaxos.sample.runtime.RuntimeMetric" level="debug" additivity="true">
+			<!--			<appender-ref ref="fileLogger" level="debug" />-->
+			<appender-ref ref="MyMeasurementFile" level="trace" />
+			<appender-ref ref="TotalMeasurementResultFile" level="result" />
+		</Logger>
+		<Root level="debug" additivity="false">
+			<appender-ref ref="console" />
+		</Root>
+	</Loggers>
+</Configuration>

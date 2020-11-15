@@ -13,7 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.wuba.wpaxos.sample.latency;
+package com.wuba.wpaxos.sample.runtime;
+
+import java.util.List;
 
 import com.wuba.wpaxos.storemachine.SMCtx;
 import com.wuba.wpaxos.storemachine.StateMachine;
@@ -21,17 +23,15 @@ import com.wuba.wpaxos.utils.JavaOriTypeWrapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.List;
-
-public class LatencySM implements StateMachine {
-	private static final Logger logger = LogManager.getLogger(LatencySM.class);
+public class EchoSM implements StateMachine {
+	private static final Logger logger = LogManager.getLogger(EchoSM.class);
 	public static final int SMID = 1;
 	private int groupId;
-
-	public LatencySM(int i) {
+	
+	public EchoSM(int i) {
 		this.groupId = i;
 	}
-
+	
 	@Override
 	public int getSMID() {
 		return SMID;
@@ -39,16 +39,15 @@ public class LatencySM implements StateMachine {
 
 	@Override
 	public boolean execute(int groupIdx, long instanceID, byte[] paxosValue, SMCtx smCtx) {
-		logger.info("[SM Execute] ok, smid " + this.getSMID() + " instanceid " + instanceID + " value "
-				+ new String(paxosValue));
-
-		// only commiter node have SMCtx.
-		if (smCtx != null && smCtx.getpCtx() != null) {
-			LatencySMCtx peCtx = (LatencySMCtx) smCtx.getpCtx();
+		logger.info("[SM Execute] ok, smid " + this.getSMID() + " instanceid " + instanceID + " value " + new String(paxosValue));
+		
+		//only commiter node have SMCtx.
+		if(smCtx != null && smCtx.getpCtx() != null) {
+			EchoSMCtx peCtx = (EchoSMCtx)smCtx.getpCtx();
 			peCtx.setExecuteRet(0);
-			peCtx.setLatencyRespValue(paxosValue);
+			peCtx.setEchoRespValue(paxosValue);
 		}
-
+		
 		executeForCheckpoint(groupIdx, instanceID, paxosValue);
 		return true;
 	}
@@ -80,7 +79,7 @@ public class LatencySM implements StateMachine {
 	@Override
 	public void unLockCheckpointState() {
 		// TODO Auto-generated method stub
-
+		
 	}
 
 	@Override
@@ -105,7 +104,7 @@ public class LatencySM implements StateMachine {
 	@Override
 	public void fixCheckpointByMinChosenInstanceId(long minChosenInstanceID) {
 		// TODO Auto-generated method stub
-
+		
 	}
 
 	public int getGroupId() {

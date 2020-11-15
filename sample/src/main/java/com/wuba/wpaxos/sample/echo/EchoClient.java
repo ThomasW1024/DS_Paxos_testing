@@ -51,10 +51,11 @@ public class EchoClient {
 		
 		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 		int idx = 0;
+		int counter = 0;
 		while(true) {
 			System.out.println("please input : ");
-			String echoReqValue = br.readLine();
-			
+//			String echoReqValue = br.readLine();
+			String echoReqValue = (counter == 2) ? "quit" : "1";
 			if("quit".equals(echoReqValue)) break;
 			
 			try {
@@ -69,6 +70,7 @@ public class EchoClient {
 					echoServer.addMember(NodeUtil.parseIpPort(new String(echoReqValue)));
 					System.out.println(echoServer.getAllMembers());
 				}
+				counter++;
 			} catch(Exception e) {
 				e.printStackTrace();
 			}

@@ -20,6 +20,7 @@ import com.wuba.wpaxos.sample.util.NodeUtil;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.ConfigurationSource;
 import org.apache.logging.log4j.core.config.Configurator;
 
@@ -58,21 +59,21 @@ public class LatencyClient implements Runnable {
 		String rootPath = "./";
 		int groupCount = 1;
 		int indexType = 0;
-		createLogger();
 		final String addr = args[0];
 		NodeInfo myNode = NodeUtil.parseIpPort(addr);
+		createLogger("node_" + myNode.getNodeID());
 		List<NodeInfo> nodeInfoList = NodeUtil.parseIpPortList(args[1]);
 		boolean isProposable = Boolean.parseBoolean(args[2]);
 		boolean droppable = Boolean.parseBoolean(args[3]);
 
-		String log4jConfig = rootPath + File.separator + "conf" + File.separator + "log4j.xml";
-		ConfigurationSource src = new ConfigurationSource(new FileInputStream(log4jConfig));
-		Configurator.initialize(LatencyClient.class.getClassLoader(), src);
+//		String log4jConfig = rootPath + File.separator + "conf" + File.separator + "log4j.xml";
+//		ConfigurationSource src = new ConfigurationSource(new FileInputStream(log4jConfig));
+//		Configurator.initialize(LatencyClient.class.getClassLoader(), src);
 
 		LatencyServer latencyServer = new LatencyServer(myNode, nodeInfoList, groupCount, rootPath, indexType);
 
 		latencyServer.runPaxos();
-		System.out.println("latency server start, ip [" + myNode.getIp() + "] port [" + myNode.getPort() + "]");
+		logger.info("latency server start, ip [" + myNode.getIp() + "] port [" + myNode.getPort() + "]");
 		final LatencyClient clt = new LatencyClient(droppable);
 
 		final Random random = new Random();
@@ -137,13 +138,37 @@ public class LatencyClient implements Runnable {
 		return;
 	}
 
-	private synchronized static void createLogger() throws FileNotFoundException, IOException {
+/*	private synchronized static void createLogger()  {
 		if (logger == null) {
-			String log4jConfig = "." + File.separator + "conf" + File.separator + "log4j.xml";
-			System.out.print(log4jConfig);
-			ConfigurationSource src = new ConfigurationSource(new FileInputStream(log4jConfig));
-			Configurator.initialize(LatencyClient.class.getClassLoader(), src);
+			try {
+				String log4jConfig = "." + File.separator + "conf" + File.separator + "log4j.xml";
+				System.out.print(log4jConfig);
+				ConfigurationSource src = new ConfigurationSource(new FileInputStream(log4jConfig));
+				Configurator.initialize(LatencyClient.class.getClassLoader(), src);
+				logger = LogManager.getLogger(LatencyClient.class);
+			} catch (IOException exception) {
+				exception.printStackTrace();
+			}
+		}
+	}*/
+	private synchronized static void createLogger(String nodeName)  {
+		if (logger == null) {
+
+			String currentDir = System.getProperty("user.dir");
+			System.out.println(currentDir);
+			String log4jConfig = currentDir + "/conf" + File.separator + "log4j.xml";
+			File logCofigFle = new File(log4jConfig);
+			if (log4jConfig.isEmpty()) {
+				throw new RuntimeException("log4J.xml has not found at root " + currentDir);
+			}
+			System.out.println(log4jConfig);
+			//ConfigurationSource src = new ConfigurationSource(new FileInputStream(log4jConfig));
+			Configurator.initialize(null, log4jConfig);
+			System.setProperty("nodeName", nodeName);
+			LoggerContext context = (LoggerContext) LogManager.getContext(false);
+			context.updateLoggers();
 			logger = LogManager.getLogger(LatencyClient.class);
+			logger.info("---Initialed Logger---");
 		}
 	}
 
