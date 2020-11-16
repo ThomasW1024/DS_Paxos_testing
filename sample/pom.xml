@@ -26,6 +26,21 @@
             <artifactId>commons-lang3</artifactId>
             <version>3.11</version>
         </dependency>
+        <!-- For Testing Multiple Paxos Node (jar) -->
+        <dependency>
+            <groupId>org.zeroturnaround</groupId>
+            <artifactId>zt-exec</artifactId>
+            <version>1.12</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-simple -->
+        <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-simple -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>1.7.30</version>
+<!--            <scope>test</scope>-->
+        </dependency>
+
     </dependencies>
 
     <properties>
@@ -58,6 +73,25 @@
                             </descriptorRefs>
                             <!-- <appendAssemblyId>false</appendAssemblyId>-->
                             <finalName>paxos_runtime_testing</finalName>
+                        </configuration>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>paxos_runtime_testcase_runner</id>
+                        <configuration>
+                            <archive>
+                                <manifest>
+                                    <mainClass>com.wuba.wpaxos.sample.testcase.RuntimeTestCaseMain</mainClass>
+                                </manifest>
+                            </archive>
+                            <descriptorRefs>
+                                <descriptorRef>jar-with-dependencies</descriptorRef>
+                            </descriptorRefs>
+                            <!-- <appendAssemblyId>false</appendAssemblyId>-->
+                            <finalName>paxos_runtime_testcase_runner</finalName>
                         </configuration>
                         <phase>package</phase>
                         <goals>

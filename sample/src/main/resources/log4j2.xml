@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="warn">
 	<Properties>
-		<Property name="basePath">logs</Property>
+		<Property name="basePath">sample/logs</Property>
 	</Properties>
 
 	<!--Define Custom Logging Message-->
@@ -26,15 +26,15 @@
 			<PatternLayout pattern="[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} | %logger{36} -| [%t] - %msg%n" />
 		</Console>
 
-		<File name="MyLogFile" filename="${basePath}/${sys:myLogFilename}" append="false">
+		<File name="MyLogFile" filename="${sys:myLogFilename}" append="false">
 			<PatternLayout pattern="[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %logger{36} -| %msg%n"/>
 		</File>
 
-		<File name="MyMeasurementFile" filename="${basePath}/${sys:myMeasurementLog}" append="false">
+		<File name="MyMeasurementFile" filename="${sys:myMeasurementLog}" append="false">
 			<PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS},%msg%n"/>
 		</File>
 
-		<File name="TotalMeasurementResultFile" filename="${basePath}/${sys:totalMeasurementLog}" append="true">
+		<File name="TotalMeasurementResultFile" filename="${sys:totalMeasurementLog}" append="true">
 			<PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS},%msg%n"/>
 		</File>
 

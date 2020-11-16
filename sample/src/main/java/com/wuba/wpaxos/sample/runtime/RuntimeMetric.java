@@ -1,5 +1,7 @@
 package com.wuba.wpaxos.sample.runtime;
 
+import java.util.LongSummaryStatistics;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.logging.log4j.Level;
@@ -13,6 +15,7 @@ public class RuntimeMetric {
 	private static long endTime;
 	private static String nodeId;
 	private static AtomicInteger atomicCounter;
+	private static CopyOnWriteArrayList<Long> runtimeList = new CopyOnWriteArrayList<>();
 
 	public static void startMeasurement(String aNodeId) {
 		startTime = System.currentTimeMillis();
@@ -20,15 +23,30 @@ public class RuntimeMetric {
 		atomicCounter = new AtomicInteger(0);
 	}
 
+	private static double calculateSD(CopyOnWriteArrayList<Long> numArray, double mean)
+	{
+		double standardDeviation = 0.0;
+		for(long num: numArray) {
+			standardDeviation += Math.pow((double)num - mean, 2);
+		}
+
+		return Math.sqrt(standardDeviation/numArray.size());
+	}
+
 	public static void endMeasurement() {
 		endTime = System.currentTimeMillis();
 		double averageConsensusPerSecond = (float)atomicCounter.intValue()/((endTime - startTime)/1000.0);
 		logger.info("Average Proposed Value Per Second: {}", averageConsensusPerSecond);
-		logger.log(RESULT,"{},{}", nodeId, averageConsensusPerSecond);
+		LongSummaryStatistics statistics = runtimeList.stream().mapToLong((x) -> x).summaryStatistics();
+		double deviation = calculateSD(runtimeList, statistics.getAverage());
+		logger.log(RESULT,"{},{},{},{},{},{},{},{},{}", nodeId, startTime, endTime, averageConsensusPerSecond, statistics.getSum(), statistics.getMax(), statistics.getMin(), statistics.getAverage(), deviation);
 	}
 
 	public static void measureRuntime(int instanceId, String respValue, long start, long end) {
-		logger.info("{},{},{},{},{}", instanceId, respValue, start, end, end - start);
+		// time, a value has been accepted after requested
+		long gap = end - start;
+		logger.info("{},{},{},{},{}", instanceId, respValue, start, end, gap);
+		runtimeList.add(gap);
 		atomicCounter.incrementAndGet();
 	}
 }

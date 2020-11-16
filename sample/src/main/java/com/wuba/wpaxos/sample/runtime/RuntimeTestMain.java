@@ -1,5 +1,7 @@
 package com.wuba.wpaxos.sample.runtime;
 
+import java.io.File;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -15,11 +17,11 @@ public class RuntimeTestMain {
 	private static final Logger logger = LogManager.getLogger(RuntimeTestMain.class);
 	private static Executors executors;
 
-	static void updateLogger(String filename){
+	static void updateLogger(String rootDir, String nodeId){
 		long currentTime = System.currentTimeMillis();
-		System.setProperty("myLogFilename", filename +  "/"  + currentTime + ".log");
-		System.setProperty("myMeasurementLog", filename + "/" + "measurement_" + currentTime + ".log");
-		System.setProperty("totalMeasurementLog", "runtime_result.csv");
+		System.setProperty("myLogFilename", rootDir + File.separator + nodeId +  "/"  + currentTime + ".log");
+		System.setProperty("myMeasurementLog", rootDir + File.separator + nodeId + "/" + "measurement_" + currentTime + ".log");
+		System.setProperty("totalMeasurementLog", rootDir + File.separator + "runtime_result.csv");
 		LoggerContext context = (LoggerContext) LogManager.getContext(false);
 		context.reconfigure();
 //		context.updateLoggers();
@@ -29,11 +31,12 @@ public class RuntimeTestMain {
 		if (args.length != 7) {
 			System.out.println("arguments num is wrong (required 7) , they are[rootPath{string},nodeName{String},myNode{ip{string}:port{int}},nodeList{ip{string}:port{int},ip{string}:port{int},...},groupCount{int},indexType{int},isProposer{boolean}]");
 			System.out.println("e.g: ./ node1 127.0.0.1:30000 127.0.0.1:30000,127.0.0.1:30001,127.0.0.1:30002 1 1 false");
+			System.out.println("Your Arg: " + Arrays.toString(args));
 			System.exit(1);
 		}
 		String rootPath = args[0];
 		String nodeName = args[1];
-		updateLogger(nodeName);
+		updateLogger(rootPath, nodeName);
 		NodeInfo myNode = NodeUtil.parseIpPort(args[2]);
 		List<NodeInfo> nodeInfoList = NodeUtil.parseIpPortList(args[3]);
 		int groupCount = Integer.parseInt(args[4]);

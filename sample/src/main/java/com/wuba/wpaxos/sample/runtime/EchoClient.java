@@ -67,38 +67,8 @@ public class EchoClient {
 				logger.info("Shutdown the propose-value task");
 			}
 		});
-		timer.start();
-
-//		this.scheduledService.schedule(() -> {
-//			try {
-//				BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-//				int idxTemp;
-//				while (true) {
-////				System.out.println("please input : ");
-////				String echoReqValue = br.readLine();
-//					String echoReqValue = "1";
-//					if ("quit".equals(echoReqValue)) break;
-//					if ("1".equals(echoReqValue)) {
-//						for (int i = 0; i < 50; i++) {
-//							idxTemp = this.idxAtomicInteger.getAndIncrement();
-//							String echoRespValue = this.myEchoServer.echo("wpaxos_test" + idxTemp, 0);
-//							logger.info("echo response : " + echoRespValue);
-//							logger.info("sleep: 1000");
-//							Thread.sleep(1000);
-//							logger.info("awakening");
-//						}
-//					}
-//					else {
-//						this.myEchoServer.addMember(NodeUtil.parseIpPort(echoReqValue));
-//						logger.info(this.myEchoServer.getAllMembers());
-//					}
-//				}
-//				br.close();
-//			}
-//			catch (Exception exception) {
-//				exception.printStackTrace();
-//			}
-//		}, delayInSec, TimeUnit.SECONDS);
+		// dont start the timer
+		//timer.start();
 		this.proposeValueRunner();
 	}
 
@@ -112,14 +82,13 @@ public class EchoClient {
 //				String echoReqValue = br.readLine();
 				//String echoReqValue = "1";
 				RuntimeMetric.startMeasurement(this.nodeId);
-				String testMsgFormat = this.nodeId + ":" + RandomStringUtils.random(8, true, false) + "_test_";
 				idxTemp = this.idxAtomicInteger.getAndIncrement();
 				long startTime = 0;
-				for (int i = 0; i < maxProposedCounter; ) {
+				for (int i = 0; i <= maxProposedCounter; ) {
 					if (startTime == 0) {
 						startTime = System.currentTimeMillis();
 					}
-					String echoReqValue = testMsgFormat + idxTemp;
+					String echoReqValue = RandomStringUtils.random(64, true, false);
 					logger.info("echo request -> " + echoReqValue);
 					String echoRespValue = this.myEchoServer.echo(echoReqValue, 0);
 					if (echoRespValue != null) {
@@ -131,8 +100,8 @@ public class EchoClient {
 						startTime = 0;
 					}
 					logger.info("echo response <- " + echoRespValue);
-					logger.info("sleep: 100 ms");
-					Thread.sleep(100);
+					logger.info("sleep: 500 ms");
+					Thread.sleep(500);
 					logger.info("awakening");
 				}
 				RuntimeMetric.endMeasurement();
