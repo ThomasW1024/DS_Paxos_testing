@@ -3,6 +3,7 @@
 git clone https://github.com/wuba/WPaxos.git
 
 # importing test case:
+  Download from : https://version-control.adelaide.edu.au/svn/a1797827/2020/s2/ds/assignment3
   copy all the file inside the SVN repository into the root of the project.
   and append /sample with the /sample folder
 
