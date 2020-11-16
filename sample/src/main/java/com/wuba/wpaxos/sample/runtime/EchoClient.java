@@ -15,18 +15,11 @@
  */
 package com.wuba.wpaxos.sample.runtime;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.util.List;
-import java.util.Random;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.wuba.wpaxos.comm.NodeInfo;
-import com.wuba.wpaxos.sample.util.NodeUtil;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -38,19 +31,23 @@ public class EchoClient {
 	private AtomicInteger idxAtomicInteger;
 	private final String nodeId;
 	private boolean isStopToRun = false;
+	private final int threadWaitTime;
+	private final int proposeValLength;
 
-	public EchoClient(String nodeId, String rootPath, NodeInfo myNode, List<NodeInfo> nodeInfoList, int groupCount, int indexType) throws Exception{
+	public EchoClient(String nodeId, String rootPath, NodeInfo myNode, List<NodeInfo> nodeInfoList, int groupCount, int indexType, int threadWaitTime, int valLength) throws Exception{
 		this.nodeId = nodeId;
 //		this.scheduledService = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryBuilder().setNameFormat(nodeId).build());
 		this.idxAtomicInteger = new AtomicInteger(0);
 		this.myEchoServer = new EchoServer(myNode, nodeInfoList, groupCount, rootPath, indexType);
 		this.myEchoServer.runPaxos();
+		this.threadWaitTime = threadWaitTime;
+		this.proposeValLength = valLength;
 		logger.info("echo server start, ip [" + myNode.getIp() + "] port [" + myNode.getPort() + "]");
 	}
 
 	public void proposeValue(long delayInSec, long durationInSec) {
 		logger.info("start proposing value");
-		RuntimeTimer timer = new RuntimeTimer(this.nodeId, true, delayInSec, durationInSec, new RuntimeTimer.TimerDelegate() {
+		/*RuntimeTimer timer = new RuntimeTimer(this.nodeId, true, delayInSec, durationInSec, new RuntimeTimer.TimerDelegate() {
 			@Override
 			public void tick() {
 				logger.info("ticking...");
@@ -59,16 +56,16 @@ public class EchoClient {
 			@Override
 			public void timeUp() {
 				LoggingUtil.splitterLog(logger, "TIMEUP: " + durationInSec + "s");
-//				scheduledService.shutdownNow();
-//				while (!scheduledService.isTerminated()) {
-//
-//				}
+				scheduledService.shutdownNow();
+				while (!scheduledService.isTerminated()) {
+
+				}
 
 				logger.info("Shutdown the propose-value task");
 			}
 		});
 		// dont start the timer
-		//timer.start();
+		timer.start();*/
 		this.proposeValueRunner();
 	}
 
@@ -77,41 +74,33 @@ public class EchoClient {
 			logger.info("start propose value");
 			int idxTemp;
 			int maxProposedCounter = 50;
-
-//				System.out.println("please input : ");
-//				String echoReqValue = br.readLine();
-				//String echoReqValue = "1";
 				RuntimeMetric.startMeasurement(this.nodeId);
 				idxTemp = this.idxAtomicInteger.getAndIncrement();
 				long startTime = 0;
+				// initial proposed value
+				String proposedValue = RandomStringUtils.random(this.proposeValLength, true, false);;
 				for (int i = 0; i <= maxProposedCounter; ) {
 					if (startTime == 0) {
 						startTime = System.currentTimeMillis();
 					}
-					String echoReqValue = RandomStringUtils.random(64, true, false);
-					logger.info("echo request -> " + echoReqValue);
-					String echoRespValue = this.myEchoServer.echo(echoReqValue, 0);
+					logger.info("echo request -> " + proposedValue);
+					String echoRespValue = this.myEchoServer.echo(proposedValue, 0);
 					if (echoRespValue != null) {
 						RuntimeMetric.measureRuntime(idxTemp, echoRespValue, startTime, System.currentTimeMillis());
 						// if it is consensus
 						idxTemp = this.idxAtomicInteger.getAndIncrement();
+						proposedValue = RandomStringUtils.random(this.proposeValLength, true, false);
 						i++;
 						// reset start time
 						startTime = 0;
 					}
 					logger.info("echo response <- " + echoRespValue);
-					logger.info("sleep: 500 ms");
-					Thread.sleep(500);
+					logger.info("sleep: {} ms", this.threadWaitTime);
+					Thread.sleep(this.threadWaitTime);
 					logger.info("awakening");
 				}
 				RuntimeMetric.endMeasurement();
 				LoggingUtil.splitterLog(logger, "PROPOSED: " + (this.idxAtomicInteger.intValue() - 1));
-//				else {
-//					this.myEchoServer.addMember(NodeUtil.parseIpPort(echoReqValue));
-//					logger.info(this.myEchoServer.getAllMembers());
-//				}
-			//Thread.sleep(1000);
-			//System.exit(-1);
 		}
 		catch (Exception exception) {
 			exception.printStackTrace();

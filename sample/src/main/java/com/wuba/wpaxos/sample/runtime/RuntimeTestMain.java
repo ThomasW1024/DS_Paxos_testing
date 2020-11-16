@@ -28,9 +28,9 @@ public class RuntimeTestMain {
 	}
 
 	public static void main(String[] args) throws Exception {
-		if (args.length != 7) {
-			System.out.println("arguments num is wrong (required 7) , they are[rootPath{string},nodeName{String},myNode{ip{string}:port{int}},nodeList{ip{string}:port{int},ip{string}:port{int},...},groupCount{int},indexType{int},isProposer{boolean}]");
-			System.out.println("e.g: ./ node1 127.0.0.1:30000 127.0.0.1:30000,127.0.0.1:30001,127.0.0.1:30002 1 1 false");
+		if (args.length != 9) {
+			System.out.println("arguments num is wrong (required 7) , they are[rootPath{string},nodeName{String},myNode{ip{string}:port{int}},nodeList{ip{string}:port{int},ip{string}:port{int},...},groupCount{int},indexType{int},isProposer{boolean},threadWaitTime{int},valByteLength{int}]");
+			System.out.println("e.g: ./ node1 127.0.0.1:30000 127.0.0.1:30000,127.0.0.1:30001,127.0.0.1:30002 1 1 false 100 64");
 			System.out.println("Your Arg: " + Arrays.toString(args));
 			System.exit(1);
 		}
@@ -42,9 +42,11 @@ public class RuntimeTestMain {
 		int groupCount = Integer.parseInt(args[4]);
 		int indexType = Integer.parseInt(args[5]);
 		boolean isProposer = Boolean.parseBoolean(args[6]);
+		int threadWaitingTime = Integer.parseInt(args[7]);
+		int proposeValLength = Integer.parseInt(args[8]);
 		String nodeId = nodeName + "_" + myNode.getIp() + ":" + myNode.getPort();
 		LoggingUtil.splitterLog(logger, "Initialized Client - " + nodeId);
-		EchoClient client = new EchoClient(nodeName, rootPath + "/db", myNode, nodeInfoList, groupCount, indexType);
+		EchoClient client = new EchoClient(nodeName, rootPath + "/db", myNode, nodeInfoList, groupCount, indexType, threadWaitingTime, proposeValLength);
 		LoggingUtil.splitterLog(logger, "Waiting 3s for initialization");
 		Thread.sleep(3000);
 		if (isProposer) {

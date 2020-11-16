@@ -92,12 +92,14 @@ public class RuntimeTestCaseMain {
 				boolean isProposer = proposerList.get(i);
 				if (!isProposer) {
 					if (failureNodeCounter < failureNodes) {
-						processExecutors.add(new ProcessExecutor().command("java", "-jar", loadExecuteJar.getPath(), testCaseRootPath, "node" + (i + 1), nodeAddress, nodesAddresses, "1","0", "false").redirectOutput(Slf4jStream.of(RuntimeTestCaseMain.class).asInfo()).destroyOnExit().timeout(5, TimeUnit.SECONDS));
+						// failure node
+						processExecutors.add(new ProcessExecutor().command("java", "-jar", loadExecuteJar.getPath(), testCaseRootPath, "node" + (i + 1), nodeAddress, nodesAddresses, "1","0", "false", String.valueOf(proposedWaitTime), String.valueOf(msgBytesLength)).redirectOutput(Slf4jStream.of(RuntimeTestCaseMain.class).asInfo()).destroyOnExit().timeout(5, TimeUnit.SECONDS));
 						failureNodeCounter++;
 						continue;
 					}
 				}
-				processExecutors.add(new ProcessExecutor().command("java", "-jar", loadExecuteJar.getPath(), testCaseRootPath, "node" + (i + 1), nodeAddress, nodesAddresses, "1","0", isProposer ? "true" : "false").redirectOutput(Slf4jStream.of(RuntimeTestCaseMain.class).asInfo()).destroyOnExit().timeout(processTimeOut, TimeUnit.SECONDS));
+				// normal node
+				processExecutors.add(new ProcessExecutor().command("java", "-jar", loadExecuteJar.getPath(), testCaseRootPath, "node" + (i + 1), nodeAddress, nodesAddresses, "1","0", isProposer ? "true" : "false", String.valueOf(proposedWaitTime), String.valueOf(msgBytesLength)).redirectOutput(Slf4jStream.of(RuntimeTestCaseMain.class).asInfo()).destroyOnExit().timeout(processTimeOut, TimeUnit.SECONDS));
 			}
 			executorService = Executors.newFixedThreadPool(processExecutors.size());
 			for (ProcessExecutor process : processExecutors) {
