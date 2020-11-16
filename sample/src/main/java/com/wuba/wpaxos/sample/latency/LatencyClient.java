@@ -26,10 +26,9 @@ import org.apache.logging.log4j.core.config.Configurator;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
@@ -40,6 +39,9 @@ public class LatencyClient implements Runnable {
 	public static long settleTime = 3000;
 
 	private boolean droppable = false;
+	private List<Long> latency;
+	private String address;
+	private String testplan;
 
 	/**
 	 * 
@@ -49,9 +51,9 @@ public class LatencyClient implements Runnable {
 	 * @param args[3] Boolean will this node drop itself after timeout
 	 */
 	public static void main(String[] args) throws Exception {
-		if (args.length != 4) {
+		if (args.length != 5) {
 			System.out.println(
-					"arguments num is wrong , they are [String-myNode] , [String-nodeList], [boolean-isProposable], [boolean-droppable]");
+					"arguments num is wrong , they are [String-myNode] , [String-nodeList], [boolean-isProposable], [boolean-droppable], [Testplan]");
 			System.exit(1);
 		}
 
@@ -64,6 +66,7 @@ public class LatencyClient implements Runnable {
 		List<NodeInfo> nodeInfoList = NodeUtil.parseIpPortList(args[1]);
 		boolean isProposable = Boolean.parseBoolean(args[2]);
 		boolean droppable = Boolean.parseBoolean(args[3]);
+		String testPlan = args[4];
 
 		String log4jConfig = rootPath + File.separator + "conf" + File.separator + "log4j.xml";
 		ConfigurationSource src = new ConfigurationSource(new FileInputStream(log4jConfig));
@@ -72,8 +75,8 @@ public class LatencyClient implements Runnable {
 		LatencyServer latencyServer = new LatencyServer(myNode, nodeInfoList, groupCount, rootPath, indexType);
 
 		latencyServer.runPaxos();
-		System.out.println("latency server start, ip [" + myNode.getIp() + "] port [" + myNode.getPort() + "]");
-		final LatencyClient clt = new LatencyClient(droppable);
+		logger.info("latency server start, ip [" + myNode.getIp() + "] port [" + myNode.getPort() + "]");
+		final LatencyClient clt = new LatencyClient(droppable, addr, testPlan);
 
 		final Random random = new Random();
 
@@ -89,15 +92,16 @@ public class LatencyClient implements Runnable {
 				AtomicLong startStamp = new AtomicLong(System.currentTimeMillis());
 				while (true) {
 					try {
-						String latencyRespValue = latencyServer.propose(addr + ":" + (idx++), 0);
+						String val = generateData(64).toString();
+						String latencyRespValue = latencyServer.propose(val, 0);
 						long endStamp = System.currentTimeMillis();
-						if(latencyRespValue != null) {
-							logger.info((endStamp - startStamp.get()));
+						if (latencyRespValue != null) {
+							clt.latency.add((endStamp - startStamp.get()));
 						} else {
-							logger.info((startStamp.get() - endStamp));
+							continue;
 						}
-						startStamp.set(endStamp);
 						Thread.sleep(random.nextInt(5) * 100);
+						startStamp.set(System.currentTimeMillis());
 					} catch (Exception e) {
 						e.printStackTrace();
 					}
@@ -112,8 +116,18 @@ public class LatencyClient implements Runnable {
 
 	}
 
-	public LatencyClient(boolean droppable) {
+	public LatencyClient(boolean droppable, String address, String testPlan) {
 		this.droppable = droppable;
+		this.latency = new ArrayList<>();
+		this.address = address;
+		this.testplan = testPlan;
+	}
+
+	// generate given byte size of data
+	private synchronized static byte[] generateData(int size) {
+		byte[] b = new byte[size];
+		new Random().nextBytes(b);
+		return b;
 	}
 
 	@Override
@@ -121,20 +135,34 @@ public class LatencyClient implements Runnable {
 		while (true) {
 			try {
 				if (this.droppable) {
-					this.wait(new Random().nextInt(100) * 100 + 5000);
+					this.wait(new Random().nextInt(20) * 100 + 5000);
 					break;
 				} else {
-					this.wait();
+					this.wait(20000);
+					write(this.address, this.latency.toString(), this.testplan);
 				}
 			} catch (InterruptedException e) {
 				break;
 			}
 		}
+		write(this.address, this.latency.toString(), this.testplan);
 		try {
 			this.wait(2000);
 		} catch (InterruptedException e) {
 		}
 		return;
+	}
+
+	public synchronized static void write(String fileName, String data, String testplan) {
+		try {
+			FileWriter myWriter = new FileWriter("./logs/latency/" + testplan + "/" + fileName + ".txt", true);
+			myWriter.write(data);
+			myWriter.close();
+			System.out.println("Successfully wrote to the file.");
+		} catch (IOException e) {
+			System.out.println("An error occurred.");
+			e.printStackTrace();
+		}
 	}
 
 	private synchronized static void createLogger() throws FileNotFoundException, IOException {
@@ -144,6 +172,7 @@ public class LatencyClient implements Runnable {
 			ConfigurationSource src = new ConfigurationSource(new FileInputStream(log4jConfig));
 			Configurator.initialize(LatencyClient.class.getClassLoader(), src);
 			logger = LogManager.getLogger(LatencyClient.class);
+			logger.info("success");
 		}
 	}
 
