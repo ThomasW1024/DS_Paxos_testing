@@ -36,22 +36,24 @@ public class LatencyTestMain implements Runnable {
 	/**
 	 * 
 	 * @param args[0] Integer number of node in paxos
-	 * @param args[1] Float percentage of node will send proposal 
+	 * @param args[1] Float percentage of node will send proposal
 	 * @param args[2] Long time that the paxos will run before force terminate
-	 * @param args[3] Boolean will the nodes drop itself (default 30% change to drop itself, lifetime = rand(5000, 15000)
+	 * @param args[3] Boolean will the nodes drop itself (default 30% change to drop
+	 *                itself, lifetime = rand(5000, 15000)
 	 */
 	public static void main(String[] args) throws IOException {
 		if (logger == null) {
 			String log4jConfig = "conf" + File.separator + "log4j.xml";
 			System.out.println(log4jConfig);
-			//ConfigurationSource src = new ConfigurationSource(new FileInputStream(log4jConfig));
+			// ConfigurationSource src = new ConfigurationSource(new
+			// FileInputStream(log4jConfig));
 			Configurator.initialize(null, log4jConfig);
-			//System.out.println(LatencyClient.class.getClassLoader().toString());
+			// System.out.println(LatencyClient.class.getClassLoader().toString());
 
 			logger = LogManager.getLogger(LatencyTestMain.class);
 		}
-		deleteDbFiles(new File( "./LatencyDb"));
-		moveDbFile(new File( "./logs"));
+		deleteDbFiles(new File("./LatencyDb"));
+		moveDbFile(new File("./logs"));
 		if (args.length != 4) {
 			System.out.println(
 					"wrong usage: [int-number of node] [float - around Persentage of Proposing Node] [long-runtime] [boolean-dropable]");
@@ -61,9 +63,11 @@ public class LatencyTestMain implements Runnable {
 		float percentage = Float.parseFloat(args[1]);
 		long runtime = Long.parseLong(args[2]);
 		boolean droppable = Boolean.parseBoolean(args[3]);
+		String testplan = total[0] + "-" + percentage + "-" + droppable;
 
 		nodeList = createNodeList(total[0]);
-		createProcesses(nodeList, 0, percentage, droppable);
+		createFolder(testplan);
+		createProcesses(nodeList, 0, percentage, droppable, testplan);
 
 		new LatencyTestMain(runtime).run();
 		System.out.println("end");
@@ -82,12 +86,13 @@ public class LatencyTestMain implements Runnable {
 		return sb.toString();
 	}
 
-	public synchronized static void createProcesses(String list, int currentCycle, float percentage,
-			boolean droppable) {
+	public synchronized static void createProcesses(String list, int currentCycle, float percentage, boolean droppable,
+			String testplan) {
 		String[] addrs = list.split(",");
 		int count = 0;
 		int total = addrs.length;
 		Random rng = new Random();
+		int counter = 0;
 		boolean canRandom = true;
 		for (String s : addrs) {
 			boolean willDrop = false;
@@ -95,7 +100,8 @@ public class LatencyTestMain implements Runnable {
 
 			float currentPercentage = (float) count / total;
 			if (currentPercentage < percentage) {
-				if (canRandom && ((total - count) / (float) total) > percentage - currentPercentage) {
+				int remaining = (int) (Math.ceil(percentage * total) - count);
+				if (canRandom && ((total - counter) > remaining)) {
 					propose = rng.nextBoolean();
 				} else {
 					canRandom = false;
@@ -106,12 +112,13 @@ public class LatencyTestMain implements Runnable {
 			if (propose) {
 				count += 1;
 			}
+			counter += 1;
 
-			if (rng.nextInt(10) < 3) {
+			if (droppable && rng.nextInt(10) < 4) {
 				willDrop = true;
 			}
 
-			Process p = createProcess(s, currentCycle, propose, willDrop);
+			Process p = createProcess(s, currentCycle, propose, willDrop, testplan);
 			processes.put(processes.size() + 1, p);
 		}
 		System.out.println(
@@ -128,12 +135,11 @@ public class LatencyTestMain implements Runnable {
 	}
 
 	public synchronized static Process createProcess(String addr, int currentCycle, boolean isProposable,
-			boolean droppable) {
+			boolean droppable, String testplan) {
 		try {
 			String cmd = "java -cp target/wpaxos.sample-1.0.0.jar:target/dependency/* com.wuba.wpaxos.sample.latency.LatencyClient "
-					+ addr + " " + nodeList + " " + isProposable + " " + droppable;
+					+ addr + " " + nodeList + " " + isProposable + " " + droppable + " " + testplan;
 			logger.info("Start Process: {}", cmd);
-			System.out.println(cmd);
 			return Runtime.getRuntime().exec(cmd);
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -168,6 +174,14 @@ public class LatencyTestMain implements Runnable {
 		}
 	}
 
+	public static synchronized void createFolder(String testplan) {
+		String folder = "./logs/latency/" + testplan;
+		File directory = new File(folder);
+		if (!directory.exists()) {
+			directory.mkdir();
+		}
+	}
+
 	public LatencyTestMain(long time) {
 		this.runtime = time;
 	}
@@ -176,7 +190,7 @@ public class LatencyTestMain implements Runnable {
 	public synchronized void run() {
 		try {
 			// wait 3s for node to settle
-			this.wait(this.runtime + LatencyClient.settleTime);
+			this.wait(this.runtime + LatencyClient.settleTime + 5000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
